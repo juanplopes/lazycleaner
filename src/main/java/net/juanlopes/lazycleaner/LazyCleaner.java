@@ -25,7 +25,6 @@ public class LazyCleaner {
     private int watchedCount;
     private Node first;
     private Cleanable keepAliveCleanable;
-    private Object keepAliveObject; // needs to be a strong reference
 
     public LazyCleaner(long threadTtl, String threadName) {
         this(threadTtl, runnable -> {
@@ -44,12 +43,10 @@ public class LazyCleaner {
         if (alive == (keepAliveCleanable != null)) return this;
 
         if (alive) {
-            keepAliveCleanable = register(keepAliveObject = new Object(), leak -> {
-                // intentionally empty task
-            });
+            keepAliveCleanable = register(this, null);
         } else {
             keepAliveCleanable.clean();
-            keepAliveObject = null;
+            keepAliveCleanable = null;
         }
         return this;
     }
@@ -150,7 +147,9 @@ public class LazyCleaner {
             if (!remove(this))
                 return;
             try {
-                action.onClean(leak);
+                if (action != null) {
+                    action.onClean(leak);
+                }
             } catch (Throwable e) {
                 // Should not happen if cleaners are well-behaved
                 LOGGER.log(Level.WARNING, "Unexpected exception in cleaner thread", e);
