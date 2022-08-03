@@ -1,6 +1,6 @@
 # LazyCleaner
 
-This project is a JDK 8 implementation of an object cleaner. This library provides 
+This project is a JDK 8 (and later) implementation of an object cleaner. This library provides 
 similar feature as JDK 9's [java.lang.ref.Cleaner](https://docs.oracle.com/javase/9/docs/api/java/lang/ref/Cleaner.html) but compatible with older Java 
 versions. Also, it defaults to lazy cleaner thread creation.
 
