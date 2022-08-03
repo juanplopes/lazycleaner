@@ -1,0 +1,25 @@
+#!/bin/bash
+testwith() {
+    echo Testing in $1
+
+    docker run -it --rm \
+        --mount "type=bind,source=$(pwd),destination=/root/source,readonly" \
+        -w /root/work \
+        $1  \
+         /bin/bash -c "java -jar /root/source/target/lazycleaner*-tests.jar"
+}
+
+set -eof pipefail
+testwith maven:3-jdk-8
+testwith maven:3-jdk-9
+testwith maven:3-jdk-10
+testwith maven:3-jdk-11
+testwith maven:3-jdk-12
+testwith maven:3-jdk-13
+testwith maven:3-jdk-14
+testwith maven:3-openjdk-15
+testwith maven:3-openjdk-16
+testwith maven:3-openjdk-17
+testwith maven:3-amazoncorretto-8
+testwith maven:3-amazoncorretto-11
+testwith maven:3-amazoncorretto-17
