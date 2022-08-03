@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,23 +48,23 @@ public class LazyCleanerTest {
 
     @Test
     public void testForceThreadAlive() throws InterruptedException {
-        ArrayList<Object> list = new ArrayList<>(Arrays.asList(
-                new Object(), new Object(), new Object()));
-
         LazyCleaner t = new LazyCleaner(10, "Cleaner");
-        assertThat(t.isThreadRunning()).isFalse();
-        assertThat(t.getWatchedCount()).isEqualTo(0);
 
-        assertThat(t.setKeepThreadAlive(true)).isSameAs(t);
-        Await.until(t::isThreadRunning);
-        assertThat(t.getWatchedCount()).isEqualTo(1);
+        for (int i = 0; i < 5; i++) {
+            assertThat(t.isThreadRunning()).isFalse();
+            assertThat(t.getWatchedCount()).isEqualTo(0);
 
-        t.setKeepThreadAlive(true);
-        assertThat(t.getWatchedCount()).isEqualTo(1);
+            assertThat(t.setKeepThreadAlive(true)).isSameAs(t);
+            Await.until(t::isThreadRunning);
+            assertThat(t.getWatchedCount()).isEqualTo(1);
 
-        t.setKeepThreadAlive(false);
-        Await.until(() -> !t.isThreadRunning());
-        assertThat(t.getWatchedCount()).isEqualTo(0);
+            t.setKeepThreadAlive(true);
+            assertThat(t.getWatchedCount()).isEqualTo(1);
+
+            t.setKeepThreadAlive(false);
+            Await.until(() -> !t.isThreadRunning());
+            assertThat(t.getWatchedCount()).isEqualTo(0);
+        }
     }
 
     @Test
@@ -75,7 +76,7 @@ public class LazyCleanerTest {
             throw new RuntimeException("abc");
         });
         Await.until(t::isThreadRunning);
-        Thread thread = getThreadByName(threadName);
+        Thread thread = Objects.requireNonNull(getThreadByName(threadName));
         thread.interrupt();
         Await.until(() -> !thread.isInterrupted()); //will ignore interrupt
 
