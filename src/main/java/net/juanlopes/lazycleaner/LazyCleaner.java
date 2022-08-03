@@ -40,7 +40,8 @@ public class LazyCleaner {
     }
 
     public synchronized LazyCleaner setKeepThreadAlive(boolean alive) {
-        if (alive == (keepAliveCleanable != null)) return this;
+        if (alive == (keepAliveCleanable != null))
+            return this;
 
         if (alive) {
             keepAliveCleanable = register(this, null);
