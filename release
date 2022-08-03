@@ -20,3 +20,4 @@ mvn versions:set -DnewVersion=$2-SNAPSHOT
 git commit -am "Developing version $2"
 
 git push --tags
+git push
