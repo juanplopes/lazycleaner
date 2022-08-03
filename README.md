@@ -1,8 +1,7 @@
 # LazyCleaner
 
-This project is a JDK 8 (and later) implementation of an object cleaner. This library provides 
-similar feature as JDK 9's [java.lang.ref.Cleaner](https://docs.oracle.com/javase/9/docs/api/java/lang/ref/Cleaner.html) but compatible with older Java 
-versions. The main difference is that this library defaults to lazy cleaner thread creation and, more importantly, the cleaning thread is terminated if no objects are being tracked for `threadTtl` milliseconds.
+This project is animplementation of an object cleaner for Java 8 (and later) . This library provides 
+similar feature as Java 9's [java.lang.ref.Cleaner](https://docs.oracle.com/javase/9/docs/api/java/lang/ref/Cleaner.html) but compatible with Java 8. The main difference is that this library defaults to lazy cleaner thread creation and, more importantly, the cleaning thread is terminated if no objects are being tracked for `threadTtl` milliseconds.
 
 ## Usage
 
