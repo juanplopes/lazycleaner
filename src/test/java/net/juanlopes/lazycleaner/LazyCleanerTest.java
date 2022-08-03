@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,28 +15,40 @@ import static org.assertj.core.api.Assertions.entry;
 public class LazyCleanerTest {
     @Test
     public void testPhantomCleaner() throws InterruptedException {
-        ArrayList<Object> list = new ArrayList<>(Arrays.asList(
+        ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(
                 new Object(), new Object(), new Object()));
 
-        LazyCleaner t = new LazyCleaner(10, "Cleaner");
+        final LazyCleaner t = new LazyCleaner(10, "Cleaner");
         assertThat(t.isThreadRunning()).isFalse();
         assertThat(t.getWatchedCount()).isEqualTo(0);
 
-        Map<Integer, Boolean> collected = new HashMap<>();
-        List<LazyCleaner.Cleanable> cleaners = new ArrayList<>();
+        final Map<Integer, Boolean> collected = new HashMap<Integer, Boolean>();
+        List<LazyCleaner.Cleanable> cleaners = new ArrayList<LazyCleaner.Cleanable>();
         for (int i = 0; i < list.size(); i++) {
-            int ii = i;
-            cleaners.add(t.register(list.get(i), leak -> collected.put(ii, leak)));
+            final int ii = i;
+            cleaners.add(t.register(list.get(i), new LazyCleaner.CleaningAction() {
+                public void onClean(boolean leak) throws Exception {
+                    collected.put(ii, leak);
+                }
+            }));
         }
         assertThat(t.getWatchedCount()).isEqualTo(3);
-        Await.until(t::isThreadRunning);
+        Await.until(new Await.Condition() {
+            public boolean get() {
+                return t.isThreadRunning();
+            }
+        });
 
         cleaners.get(1).clean();
 
         list.clear();
         System.gc();
 
-        Await.until(() -> !t.isThreadRunning());
+        Await.until(new Await.Condition() {
+            public boolean get() {
+                return !t.isThreadRunning();
+            }
+        });
 
         assertThat(t.getWatchedCount()).isEqualTo(0);
         assertThat(collected).containsOnly(
@@ -48,21 +59,29 @@ public class LazyCleanerTest {
 
     @Test
     public void testForceThreadAlive() throws InterruptedException {
-        LazyCleaner t = new LazyCleaner(10, "Cleaner");
+        final LazyCleaner t = new LazyCleaner(10, "Cleaner");
 
         for (int i = 0; i < 5; i++) {
             assertThat(t.isThreadRunning()).isFalse();
             assertThat(t.getWatchedCount()).isEqualTo(0);
 
             assertThat(t.setKeepThreadAlive(true)).isSameAs(t);
-            Await.until(t::isThreadRunning);
+            Await.until(new Await.Condition() {
+                public boolean get() {
+                    return t.isThreadRunning();
+                }
+            });
             assertThat(t.getWatchedCount()).isEqualTo(1);
 
             t.setKeepThreadAlive(true);
             assertThat(t.getWatchedCount()).isEqualTo(1);
 
             t.setKeepThreadAlive(false);
-            Await.until(() -> !t.isThreadRunning());
+            Await.until(new Await.Condition() {
+                public boolean get() {
+                    return !t.isThreadRunning();
+                }
+            });
             assertThat(t.getWatchedCount()).isEqualTo(0);
         }
     }
@@ -70,19 +89,33 @@ public class LazyCleanerTest {
     @Test
     public void testGetThread() throws InterruptedException {
         String threadName = UUID.randomUUID().toString();
-        LazyCleaner t = new LazyCleaner(10, threadName);
+        final LazyCleaner t = new LazyCleaner(10, threadName);
         Object obj = new Object();
-        t.register(obj, leak -> {
-            throw new RuntimeException("abc");
+        t.register(obj, new LazyCleaner.CleaningAction() {
+            public void onClean(boolean leak) throws Exception {
+                throw new RuntimeException("abc");
+            }
         });
-        Await.until(t::isThreadRunning);
-        Thread thread = Objects.requireNonNull(getThreadByName(threadName));
+        Await.until(new Await.Condition() {
+            public boolean get() {
+                return t.isThreadRunning();
+            }
+        });
+        final Thread thread = getThreadByName(threadName);
         thread.interrupt();
-        Await.until(() -> !thread.isInterrupted()); //will ignore interrupt
+        Await.until(new Await.Condition() {
+            public boolean get() {
+                return !thread.isInterrupted();
+            }
+        }); //will ignore interrupt
 
         obj = null;
         System.gc();
-        Await.until(() -> !t.isThreadRunning());
+        Await.until(new Await.Condition() {
+            public boolean get() {
+                return !t.isThreadRunning();
+            }
+        });
     }
 
     public static Thread getThreadByName(String threadName) {

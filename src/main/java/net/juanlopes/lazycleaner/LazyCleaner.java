@@ -2,7 +2,6 @@ package net.juanlopes.lazycleaner;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
-import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,7 +17,7 @@ public class LazyCleaner {
         void onClean(boolean leak) throws Exception;
     }
 
-    private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
+    private final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
     private final long threadTtl;
     private final ThreadFactory threadFactory;
     private boolean threadRunning;
@@ -26,11 +25,13 @@ public class LazyCleaner {
     private Node first;
     private Cleanable keepAliveCleanable;
 
-    public LazyCleaner(long threadTtl, String threadName) {
-        this(threadTtl, runnable -> {
-            Thread thread = new Thread(runnable, threadName);
-            thread.setDaemon(true);
-            return thread;
+    public LazyCleaner(long threadTtl, final String threadName) {
+        this(threadTtl, new ThreadFactory() {
+            public Thread newThread(Runnable runnable) {
+                Thread thread = new Thread(runnable, threadName);
+                thread.setDaemon(true);
+                return thread;
+            }
         });
     }
 
@@ -88,18 +89,20 @@ public class LazyCleaner {
     }
 
     private void startThread() {
-        Thread thread = threadFactory.newThread(() -> {
-            while (true) {
-                try {
-                    Node ref = (Node) queue.remove(threadTtl);
-                    if (ref != null) {
-                        ref.onClean(true);
-                    } else if (checkEmpty()) {
-                        break;
+        Thread thread = threadFactory.newThread(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        Node ref = (Node) queue.remove(threadTtl);
+                        if (ref != null) {
+                            ref.onClean(true);
+                        } else if (LazyCleaner.this.checkEmpty()) {
+                            break;
+                        }
+                    } catch (Throwable e) {
+                        // Ignore exceptions from the cleanup action (including interruption of cleanup thread)
+                        LOGGER.log(Level.WARNING, "Unexpected exception in cleaner thread main loop", e);
                     }
-                } catch (Throwable e) {
-                    // Ignore exceptions from the cleanup action (including interruption of cleanup thread)
-                    LOGGER.log(Level.WARNING, "Unexpected exception in cleaner thread main loop", e);
                 }
             }
         });
@@ -136,10 +139,9 @@ public class LazyCleaner {
         public Node(Object referent, CleaningAction action) {
             super(referent, queue);
             this.action = action;
-            Objects.requireNonNull(referent); // poor man`s reachabilityFence
+            //Objects.requireNonNull(referent); // poor man`s reachabilityFence
         }
 
-        @Override
         public void clean() {
             onClean(false);
         }

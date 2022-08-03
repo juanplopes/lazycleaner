@@ -11,6 +11,7 @@ testwith() {
 
 set -eof pipefail
 mvn clean package
+testwith enoniccloud/java6
 testwith maven:3-jdk-8
 testwith maven:3-jdk-9
 testwith maven:3-jdk-10

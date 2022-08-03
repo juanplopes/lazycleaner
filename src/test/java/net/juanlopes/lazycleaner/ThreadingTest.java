@@ -11,15 +11,17 @@ public class ThreadingTest {
 
     @Test
     public void testThreads() throws InterruptedException {
-        AtomicLong created = new AtomicLong();
-        AtomicLong disposed = new AtomicLong();
-        List<Thread> threads = new ArrayList<>();
+        final AtomicLong created = new AtomicLong();
+        final AtomicLong disposed = new AtomicLong();
+        List<Thread> threads = new ArrayList<Thread>();
         for (int i = 0; i < 8; i++) {
-            threads.add(new Thread(() -> {
-                for (int j = 0; j < 100000; j++) {
-                    Resource res = new Resource(created, disposed);
-                    if (j % 2 == 0) {
-                        res.close();
+            threads.add(new Thread(new Runnable() {
+                public void run() {
+                    for (int j = 0; j < 100000; j++) {
+                        Resource res = new Resource(created, disposed);
+                        if (j % 2 == 0) {
+                            res.close();
+                        }
                     }
                 }
             }));
@@ -28,7 +30,11 @@ public class ThreadingTest {
         for (Thread thread : threads) thread.join();
 
         System.gc();
-        Await.until(() -> disposed.get() == created.get());
+        Await.until(new Await.Condition() {
+            public boolean get() {
+                return disposed.get() == created.get();
+            }
+        });
     }
 
     private static class Resource implements Closeable {
@@ -40,7 +46,6 @@ public class ThreadingTest {
             cleanable = CLEANER.register(this, new MyCleaningAction(disposed));
         }
 
-        @Override
         public void close() {
             cleanable.clean();
         }
@@ -52,7 +57,6 @@ public class ThreadingTest {
                 this.disposed = disposed;
             }
 
-            @Override
             public void onClean(boolean leak) throws Exception {
                 disposed.incrementAndGet();
             }

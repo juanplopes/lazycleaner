@@ -1,11 +1,13 @@
 package net.juanlopes.lazycleaner;
 
-import java.util.function.BooleanSupplier;
-
 public class Await {
-    public static void until(BooleanSupplier condition) throws InterruptedException {
-        while (!condition.getAsBoolean()) {
+    public static void until(Condition condition) throws InterruptedException {
+        while (!condition.get()) {
             Thread.sleep(1);
         }
+    }
+
+    public interface Condition {
+        boolean get();
     }
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eof pipefail
 
 if [ $# -lt 2 ]; then
     echo "$0 <version> <next-version>"
@@ -8,6 +8,7 @@ if [ $# -lt 2 ]; then
     exit 0
 fi
 
+./test
 mvn versions:set -DnewVersion=$1
 mvn -P release clean deploy
 
