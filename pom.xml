@@ -6,7 +6,7 @@
 
     <groupId>net.juanlopes.lazycleaner</groupId>
     <artifactId>lazycleaner</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <name>LazyCleaner</name>
     <description>PhantomReference-based cleaner thread</description>
