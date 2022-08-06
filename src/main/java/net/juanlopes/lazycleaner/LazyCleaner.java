@@ -128,7 +128,6 @@ public class LazyCleaner {
 
         watchedCount--;
         return true;
-
     }
 
     private class Node extends PhantomReference<Object> implements Cleanable, CleaningAction {
